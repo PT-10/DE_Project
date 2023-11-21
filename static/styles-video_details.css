@@ -1,0 +1,76 @@
+body {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 20px;
+}
+
+#search_query_panel {
+  text-align: center;
+  width: 60%;
+  margin: 0 auto;
+  margin-bottom: 20px;
+}
+#search_query_panel input[type="text"] {
+  padding: 10px;
+  font-size: 13px;
+  border: 1px solid grey;
+  float: left;
+  width: 60%;
+  background: #f1f1f1;
+}
+#search_query_panel button {
+  float: left;
+  width: 15%;
+  padding: 10px;
+  background: #2196f3;
+  color: white;
+  font-size: 13px;
+  border: 1px solid grey;
+  border-left: none;
+  cursor: pointer;
+}
+#search_query_panel button:hover {
+  background: #0b7dda;
+}
+
+#current_video_panel,
+#search_result_panel {
+  height: calc(
+    100vh - 110px
+  ); /* Subtract the height of the search bar and its margin */
+  border: 1px solid black;
+  padding: 10px;
+  box-sizing: border-box;
+  margin-top: 20px; /* Add a top margin */
+  margin-bottom: 20px;
+}
+#current_video_panel {
+  width: calc(70% - 30px); /* Subtract half the gap */
+  margin-right: 20px; /* Add a right margin */
+  margin-left: 20px;
+  text-align: center; /* Center the content within the panel */
+  background-color: #f1f1f1; /* Set the background color to grey */
+  padding: 10px;
+  box-sizing: border-box;
+  color: rgb(0, 0, 0); /* Set the text color to grey */
+  font-size: 12px;
+}
+#search_result_panel {
+  width: calc(30% - 30px); /* Subtract half the gap */
+  margin-right: 20px;
+  text-align: center; /* Center the content within the panel */
+  background-color: #f1f1f1; /* Set the background color to grey */
+  padding: 10px;
+  box-sizing: border-box;
+  color: rgb(0, 0, 0); /* Set the text color to grey */
+  font-size: 12px;
+}
+
+.result-box {
+  margin-bottom: 10px;
+  padding: 10px;
+  border: 1px solid grey;
+  width: 100%; /* Cover the entire width of the search result panel */
+  flex-grow: 1;
+  box-sizing: border-box;
+}

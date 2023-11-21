@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Video Search Engine</title>
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="{{ url_for('static', filename='styles.css') }}"
+    />
+  </head>
+  <body>
+    <div id="search_query_panel">
+      <div id="search_bar">
+        <form action="/search" method="post">
+          <input
+            type="text"
+            name="search_query"
+            placeholder="Enter your search query"
+          />
+          <button type="submit">Search</button>
+        </form>
+      </div>
+    </div>
+
+    <div id="current_video_panel">
+      <h2>Video Panel</h2>
+      <!-- Display current video details here -->
+    </div>
+    <div id="search_result_panel">
+      <h2>Search Result Panel</h2>
+      <!-- Display search results here -->
+    </div>
+  </body>
+</html>
