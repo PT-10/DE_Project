@@ -1,26 +1,25 @@
 import pymysql
+from datetime import datetime
 
-def clicked(user_id, video_id):
+def clicked(user_id, video_id, search_query, video_rank):
     db = pymysql.connect("localhost", "root", "pass", "VIDEOS")
     cursor = db.cursor()
     
     # Create the 'clicks' table if it doesn't exist
-    cursor.execute("CREATE TABLE IF NOT EXISTS clicks (user_id VARCHAR(255), video_id VARCHAR(255), clicks INT);")
+    cursor.execute("CREATE TABLE IF NOT EXISTS clicks (user_id VARCHAR(255), video_id VARCHAR(255), search_query VARCHAR(255), video_rank INT, click_timestamp DATETIME, clicks INT);")
     
-    # Check if there are existing clicks for this user and video
-    cursor.execute("SELECT clicks FROM clicks WHERE user_id = '{}' AND video_id = '{}';".format(user_id, video_id))
+    # Check if there are existing clicks for this user, video, and search query
+    cursor.execute("SELECT clicks FROM clicks WHERE user_id = '{}' AND video_id = '{}' AND search_query = '{}';".format(user_id, video_id, search_query))
     results = cursor.fetchall()
 
     if len(results) == 0:
         # If no clicks exist, insert a new record
-        query = "INSERT INTO clicks(user_id, video_id, clicks) VALUES ('{}', '{}', {});".format(user_id, video_id, 1)
+        query = "INSERT INTO clicks(user_id, video_id, search_query, video_rank, click_timestamp, clicks) VALUES ('{}', '{}', '{}', {}, '{}', {});".format(user_id, video_id, search_query, video_rank, datetime.now(), 1)
         cursor.execute(query)
-        #print("1")
     else:
         # If clicks exist, update the clicks count
-        query = "UPDATE clicks SET clicks = clicks + 1 WHERE user_id = '{}' AND video_id = '{}';".format(user_id, video_id)
+        query = "UPDATE clicks SET clicks = clicks + 1 WHERE user_id = '{}' AND video_id = '{}' AND search_query = '{}';".format(user_id, video_id, search_query)
         cursor.execute(query)
-        #print("2")
 
     db.commit()
     db.close()
@@ -44,4 +43,3 @@ def get_trending_videos():
     trending_videos = refresh_trending_videos()
 
     return trending_videos
-
