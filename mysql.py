@@ -1,24 +1,24 @@
 import pymysql
 from datetime import datetime
 
-def clicked(user_id, video_id, search_query, video_rank):
+def clicked(user_name, video_name, search_query, video_rank):
     db = pymysql.connect("localhost", "root", "pass", "VIDEOS")
     cursor = db.cursor()
     
     # Create the 'clicks' table if it doesn't exist
-    cursor.execute("CREATE TABLE IF NOT EXISTS clicks (user_id VARCHAR(255), video_id VARCHAR(255), search_query VARCHAR(255), video_rank INT, click_timestamp DATETIME, clicks INT);")
+    cursor.execute("CREATE TABLE IF NOT EXISTS clicks (user_name VARCHAR(255), video_name VARCHAR(255), search_query VARCHAR(255), video_rank INT, click_timestamp DATETIME, clicks INT);")
     
     # Check if there are existing clicks for this user, video, and search query
-    cursor.execute("SELECT clicks FROM clicks WHERE user_id = '{}' AND video_id = '{}' AND search_query = '{}';".format(user_id, video_id, search_query))
+    cursor.execute("SELECT clicks FROM clicks WHERE user_name = '{}' AND video_name = '{}' AND search_query = '{}';".format(user_name, video_name, search_query))
     results = cursor.fetchall()
 
     if len(results) == 0:
         # If no clicks exist, insert a new record
-        query = "INSERT INTO clicks(user_id, video_id, search_query, video_rank, click_timestamp, clicks) VALUES ('{}', '{}', '{}', {}, '{}', {});".format(user_id, video_id, search_query, video_rank, datetime.now(), 1)
+        query = "INSERT INTO clicks(user_name, video_name, search_query, video_rank, click_timestamp, clicks) VALUES ('{}', '{}', '{}', {}, '{}', {});".format(user_name, video_name, search_query, video_rank, datetime.now(), 1)
         cursor.execute(query)
     else:
         # If clicks exist, update the clicks count
-        query = "UPDATE clicks SET clicks = clicks + 1 WHERE user_id = '{}' AND video_id = '{}' AND search_query = '{}';".format(user_id, video_id, search_query)
+        query = "UPDATE clicks SET clicks = clicks + 1 WHERE user_name = '{}' AND video_name = '{}' AND search_query = '{}';".format(user_name, video_name, search_query)
         cursor.execute(query)
 
     db.commit()
@@ -30,7 +30,7 @@ def refresh_trending_videos():
     cursor = db.cursor()
 
     # Query to get trending videos (assuming higher clicks mean trending)
-    query = "SELECT video_id, SUM(clicks) AS total_clicks FROM clicks GROUP BY video_id ORDER BY total_clicks DESC LIMIT 10;"
+    query = "SELECT video_name, SUM(clicks) AS total_clicks FROM clicks GROUP BY video_name ORDER BY total_clicks DESC LIMIT 10;"
     cursor.execute(query)
 
     trending_videos = cursor.fetchall()
