@@ -43,6 +43,5 @@ def get_trending_videos():
     # Call the refresh_trending_videos function to ensure the trending videos are up-to-date
     trending_videos = refresh_trending_videos()
 
-    # You can further process the trending_videos data and return it as needed
     return trending_videos
 
