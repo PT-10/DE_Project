@@ -11,10 +11,10 @@ embedding_url = "https://api-inference.huggingface.co/pipeline/feature-extractio
 
 class MongoDB:
     def __init__(self):
+
         # Create a MongoDB client
         self.client = MongoClient('localhost', 27017)
 
-        # Connect to your database
         self.db = self.client['video-search-engine']
 
     def search(self, query):
