@@ -1,6 +1,5 @@
 import config 
 from py2neo import Graph, Node, Relationship
-from neo4j import GraphDatabase
 import numpy as np
 
 # url = os.environ.get('GRAPHENEDB_URL', 'http://localhost:7474')
@@ -261,23 +260,23 @@ def get_related_videos(video_id):
     '''
     return graph.run(query.format(video_id)).data()
 
-user_name = "test_user"
-user = User(user_name)
-regoste=user.register()
-if regoste:
-    print("user registered")
-channel_name = "test_channel"
-channel = Channel(channel_name)
-channel.insert_channel(channel_name)
-video_id = "test_video"
-video = Video(video_id)
-video.insert_video(video_id,"test_title","test_description",channel_name,"test_channel_title","test_tags",[1,2,3,4],[1,2,3,4])
-print(video.find()['desc_embeddings'])
-channel.add_video(video.find())
-video2_id = "test_video2"
-video2 = Video(video2_id)
-video2.insert_video(video2_id,"test_title2","test_description2",channel_name,"test_channel_title2","test_tags2",[1,2,3,4],[1,2,3,4])
-channel.add_video(video2.find())
-video.add_related_video(video2)
-video2.add_related_video(video)
-print(get_related_videos(video_id))
+# user_name = "test_user"
+# user = User(user_name)
+# regoste=user.register()
+# if regoste:
+#     print("user registered")
+# channel_name = "test_channel"
+# channel = Channel(channel_name)
+# channel.insert_channel(channel_name)
+# video_id = "test_video"
+# video = Video(video_id)
+# video.insert_video(video_id,"test_title","test_description",channel_name,"test_channel_title","test_tags",[1,2,3,4],[1,2,3,4])
+# print(video.find()['desc_embeddings'])
+# channel.add_video(video.find())
+# video2_id = "test_video2"
+# video2 = Video(video2_id)
+# video2.insert_video(video2_id,"test_title2","test_description2",channel_name,"test_channel_title2","test_tags2",[1,2,3,4],[1,2,3,4])
+# channel.add_video(video2.find())
+# video.add_related_video(video2)
+# video2.add_related_video(video)
+# print(get_related_videos(video_id))
