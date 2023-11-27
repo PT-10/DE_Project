@@ -261,6 +261,19 @@ def get_related_videos(video_id):
     '''
     return graph.run(query.format(video_id)).data()
 
+def get_ordered_related_videos(video_id):
+    # Get related videos from Neo4j
+    related_videos = get_related_videos(video_id)
+
+    # Get clicks for each video from MySQL and add as a new field
+    for video in related_videos:
+        video['clicks'] = get_clicks_mysql(video['video_id'])
+
+    # Order videos by clicks
+    ordered_videos = sorted(related_videos, key=lambda x: x['clicks'], reverse=True)
+
+    return ordered_videos
+
 user_name = "test_user"
 user = User(user_name)
 regoste=user.register()
