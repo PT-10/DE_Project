@@ -14,23 +14,23 @@ app.secret_key = 'any random string'
 mongo = MongoDB()
 db = mongo.db
 
-def search_videos(query):
-    # Create a text index on the fields you want to search
-    db.test.create_index([("videoInfo.snippet.title", "text"), ("videoInfo.snippet.tags", "text")])
+# def search_videos(query):
+#     # Create a text index on the fields you want to search
+#     db.test.create_index([("videoInfo.snippet.title", "text"), ("videoInfo.snippet.tags", "text")])
 
-    # Use the $text operator for text search
-    result = db.test.find(
-        {"$text": {"$search": query}},
-        {"score": {"$meta": "textScore"}}
-    ).sort([("score", {"$meta": "textScore"})]).limit(7)
-    # print(list(result))
+#     # Use the $text operator for text search
+#     result = db.test.find(
+#         {"$text": {"$search": query}},
+#         {"score": {"$meta": "textScore"}}
+#     ).sort([("score", {"$meta": "textScore"})]).limit(7)
+#     # print(list(result))
 
-    return list(result)
+#     return list(result)
 
-def extract_titles(results):
-    # Extract titles from the search results
-    titles = [result["videoInfo"]["snippet"]["title"] for result in results]
-    return titles
+# def extract_titles(results):
+#     # Extract titles from the search results
+#     titles = [result["videoInfo"]["snippet"]["title"] for result in results]
+#     return titles
  
 def get_top_k(scores: np.ndarray, k: int) -> np.ndarray:
     idx = np.argpartition(scores, -k)[-k:]
