@@ -3,18 +3,17 @@ from mongodb import MongoDB, generate_embedding
 #from setup import DatabaseSetup
 import numpy as np
 from flask import jsonify, request,redirect,session
-from mysql import verify_user,create_user
+from mysql import verify_user,create_user, clicked
 # from insert_to_neo import insert_to_neo,add_video_relations
 
 hf_token = "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"
 embedding_url = "https://api-inference.huggingface.co/pipeline/feature-extraction/sentence-transformers/all-MiniLM-L6-v2"
 
-
-
 app = Flask(__name__)
 app.secret_key = 'any random string'
 mongo = MongoDB()
 db = mongo.db
+
 def search_videos(query):
     # Create a text index on the fields you want to search
     db.test.create_index([("videoInfo.snippet.title", "text"), ("videoInfo.snippet.tags", "text")])
@@ -118,58 +117,19 @@ def search():
         return render_template('search_results.html', search_results=results)
 
 
-@app.route("/video/<video_id>")
-def video_details(video_id):
-    # Fetch video details from MongoDB and Neo4j
-    # Update CVP and SRP accordingly
-    return render_template("video_details.html")
+@app.route('/video/<video_id>')
+def video_page(video_id):
+    # Fetch video details based on the video_id
+    # This is where you would retrieve information about the selected video
+    # For example, you might fetch details from a database or an API
+    video_details = get_video_details(video_id)
+
+    # Render the video page template with the video details
+    return render_template('video_details.html', video_details=video_details)
+
+def get_video_details(video_id):
+    video_details = db.test.find_one({ "videoInfo.id": video_id })
+    return video_details
 
 if __name__=="__main__":
     app.run(debug=True)
-
-
-# from flask import Flask, render_template, redirect, url_for, request
-# from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
-
-# app = Flask(__name__)
-# app.config['SECRET_KEY'] = 'your_secret_key'
-
-# login_manager = LoginManager(app)
-
-# class User(UserMixin):
-#     def __init__(self, user_id):
-#         self.id = user_id
-
-# @login_manager.user_loader
-# def load_user(user_id):
-#     return User(user_id)
-
-# @app.route('/login', methods=['GET', 'POST'])
-# def login():
-#     if request.method == 'POST':
-#         # Replace this with your actual authentication logic
-#         username = request.form['username']
-#         password = request.form['password']
-
-#         # Example authentication (replace with your own logic)
-#         if username == 'your_username' and password == 'your_password':
-#             user = User(user_id=1)
-#             login_user(user)
-#             return redirect(url_for('index'))
-
-#         # Redirect to login page with an error message on failed login
-#         return render_template('login.html', error='Invalid username or password')
-
-#     return render_template('login.html')
-
-# @app.route('/logout')
-# def logout():
-#     logout_user()
-#     return 'Logged out successfully'
-
-# @app.route('/index')
-# def index():
-#     return render_template('index.html')
-
-# if __name__ == '__main__':
-#     app.run(debug=True)
