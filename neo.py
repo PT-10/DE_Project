@@ -1,5 +1,6 @@
 import config 
 from py2neo import Graph, Node, Relationship
+from neo4j import GraphDatabase
 import numpy as np
 
 # url = os.environ.get('GRAPHENEDB_URL', 'http://localhost:7474')
@@ -7,6 +8,7 @@ import numpy as np
 # password = os.environ.get('NEO4J_PASSWORD')
 # graph = Graph(url + '/db/data/', username=username, password=password)
 graph = Graph("bolt://localhost:7687", auth=(config.neo4j_user, config.neo4j_pass))
+
 
 class User:
     def __init__(self, username):
@@ -21,7 +23,7 @@ class User:
             return False
 
     def find(self):
-        user = graph.find_one('User', 'username', self.username)
+        user = graph.nodes.match('User', 'username', self.username).first()
         return user
 
     def subscribe(self, channel_name):
@@ -33,18 +35,18 @@ class User:
     def is_subscribed(self, channel_name):
         query = """
         MATCH (n:User)-[r]-(v:Channel)
-        WHERE n.username={user} and v.channelId={vid}
+        WHERE n.username="{}" and v.channelId="{}"
         RETURN COUNT(r) as count
         """
-        return graph.data(query, user=self.find()['username'], vid=channel_name)[0]['count']
+        return graph.run(query.format(self.find()['username'],channel_name).data()[0]['count'])
 
     def unsubscribe(self, channel_name):
         query = """
         MATCH (n:User)-[r]-(v:Channel)
-        WHERE n.username={user} and v.channelId={vid}
+        WHERE n.username="{}" and v.channelId="{}"
         DELETE r
         """
-        graph.run(query, user=self.find()['username'], vid=channel_name)
+        graph.run(query.format(self.find()['username'],channel_name))
 
     def like_video(self, video_id):
         user = self.find()
@@ -57,18 +59,18 @@ class User:
     def is_liked_video(self, video_id):
         query = """
         MATCH (n:User)-[r:Likes]-(v:Video)
-        WHERE n.username={user} and v.videoId={vid}
+        WHERE n.username="{}" and v.videoId="{}"
         RETURN COUNT(r) as count
         """
-        return graph.data(query, user=self.find()['username'], vid=video_id)[0]['count']
+        return graph.run(query.format(self.find()['username'],video_id)).data()[0]['count']
 
     def is_disliked_video(self, video_id):
         query = """
         MATCH (n:User)-[r:Dislikes]-(v:Video)
-        WHERE n.username={user} and v.videoId={vid}
+        WHERE n.username="{}" and v.videoId="{}"
         RETURN COUNT(r) as count
         """
-        return graph.data(query, user=self.find()['username'], vid=video_id)[0]['count']
+        return graph.run(query.format(self.find()['username'],video_id)).data()[0]['count']
 
     def clear_rel_with_video(self, video_id):
         user = self.find()
@@ -77,18 +79,18 @@ class User:
     def liked_videos(self):
         query = '''
         MATCH (user:User)-[:Likes]-(video:Video)
-        WHERE user.username = {user}
+        WHERE user.username = "{}"
         RETURN DISTINCT video.mongoId
         '''
-        return graph.data(query, user=self.username)
+        return graph.run(query.format(self.username)).data()
 
     def disliked_videos(self):
         query = '''
         MATCH (user:User)-[:Dislikes]-(video:Video)
-        WHERE user.username = {user}
+        WHERE user.username = "{}"
         RETURN DISTINCT video.mongoId
         '''
-        return graph.data(query, user=self.username)
+        return graph.run(query.format(self.username)).data()
 
 
 class Channel:
@@ -104,40 +106,40 @@ class Channel:
         return True
 
     def find(self):
-        channel = graph.find_one('Channel', 'channelId', self.name)
+        channel = graph.nodes.match('Channel', channelId=self.name).first()
         return channel
 
     def subscribers(self):
         query = '''
         MATCH (user:User)-[:Subscriber]-(channel:Channel)
-        WHERE channel.channelId = {channel}
+        WHERE channel.channelId = "{}"
         RETURN DISTINCT user.username
         '''
-        return graph.run(query, channel=self.name)
+        return graph.run(query.format(self.name))
 
     def subscriber_count(self):
         query = '''
         MATCH (user:User)-[:Subscriber]-(channel:Channel)
-        WHERE channel.channelId = {channel}
+        WHERE channel.channelId = "{}"
         RETURN COUNT(DISTINCT user)
         '''
-        return graph.run(query, channel=self.name)
+        return graph.run(query.format(self.name))
 
     def video_count(self):
         query = '''
         MATCH (video:Video)-[:HasChannel]-(channel:Channel)
-        WHERE channel.channelId = {channel}
+        WHERE channel.channelId = "{}"
         RETURN COUNT(DISTINCT video)
         '''
-        return graph.run(query, channel=self.name)
+        return graph.run(query.format(self.name))
 
     def videos(self):
         query = '''
         MATCH (video:Video)-[:HasChannel]-(channel:Channel)
-        WHERE channel.channelId = {channel}
+        WHERE channel.channelId = "{}"
         RETURN DISTINCT video.videoId
         '''
-        return graph.run(query, channel=self.name)
+        return graph.run(query.format(self.name))
 
     def add_video(self, video):
         graph.create(Relationship(video, "HasChannel", self.find()))
@@ -150,55 +152,58 @@ class Video:
     def __init__(self, id_):
         self.id = id_
     
-    def insert_video(self,mongoid,title,description,channelId,channelTitle,tags):
-        video = Node('Video', videoId=self.id, mongoId=mongoid, title=title, description=description, channelId=channelId, channelTitle=channelTitle,tags=tags)
+    def insert_video(self,mongoid,title,description,channelId,channelTitle,tags,title_embeddings,desc_embeddings):
+        if self.find():
+            return False
+        video = Node('Video', videoId=self.id, mongoId=mongoid, title=title, description=description, channelId=channelId, channelTitle=channelTitle,tags=tags,title_embeddings=title_embeddings,desc_embeddings=desc_embeddings)
         graph.create(video)
         return True
 
 
     def find(self):
-        video = graph.find_one('Video', 'videoId', self.id)
+        video = graph.nodes.match('Video', videoId=self.id).first()
         return video
     
     def get_channel(self):
         query = '''
         MATCH (video:Video)-[:HasChannel]-(channel:Channel)
-        WHERE video.videoId = {video_id}
+        WHERE video.videoId = "{}"
         RETURN DISTINCT channel.channelId
         '''
-        return graph.data(query, video_id=self.id)[0]['channel.channelId']
+        print(graph.run(query.format(self.id)).data())
+        return graph.run(query.format(self.id)).data()[0]['channel.channelId']
 
     def liked_by(self):
         query = '''
         MATCH (user:User)-[:Likes]-(video:Video)
-        WHERE video.videoId = {video_id}
+        WHERE video.videoId = "{}"
         RETURN DISTINCT user.username
         '''
-        return graph.run(query, video_id=self.id)
+        return graph.run(query.format(self.id))
 
     def liked_by_count(self):
         query = '''
         MATCH (user:User)-[:Likes]-(video:Video)
-        WHERE video.videoId = {video_id}
+        WHERE video.videoId = "{}"
         RETURN COUNT(DISTINCT user.username) as count
         '''
-        return graph.data(query, video_id=self.id)[0]['count']
+        return graph.run(query.format(self.id)).data()[0]['count']
 
     def disliked_by(self):
         query = '''
         MATCH (user:User)-[:Dislikes]-(video:Video)
-        WHERE video.videoId = {video_id}
+        WHERE video.videoId = "{}"
         RETURN DISTINCT user.username
         '''
-        return graph.run(query, video_id=self.id)
+        return graph.run(query.format(self.id))
 
     def disliked_by_count(self):
         query = '''
         MATCH (user:User)-[:Dislikes]-(video:Video)
-        WHERE video.videoId = {video_id}
+        WHERE video.videoId = "{}"
         RETURN COUNT(DISTINCT user.username) as count
         '''
-        return graph.data(query, video_id=self.id)[0]['count']
+        return graph.run(query.format(self.id)).data()[0]['count']
 
     def like(self, user):
         self.clear_user_rel(user)
@@ -211,19 +216,20 @@ class Video:
     def clear_user_rel(self, user):
         query = """
         MATCH (n:User)-[r]-(v:Video)
-        WHERE n.username={user} and v.videoId={vid}
+        WHERE n.username="{}" and v.videoId="{}"
         DELETE r
         """
-        graph.run(query, user=user['username'], vid=self.find()['videoId'])
+        graph.run(query.format(user['username'],self.find()['videoId']))
 
     def add_related_video(self, video):
         current_channel = self.get_channel()
         related_channel = video.get_channel()
         if current_channel == related_channel:
+            print('same  channel')
             same_channel = True
         common_tags = len(set(self.find()['tags']).intersection(set(video.find()['tags'])))
-        common_description = commonDescription(self.find()['description_embedding'], video.find()['description_embedding'])
-        common_title = commonTitle(self.find()['title_embedding'], video.find()['title_embedding'])
+        common_description = commonDescription(self.find()['desc_embeddings'], video.find()['desc_embeddings'])
+        common_title = commonTitle(self.find()['title_embeddings'], video.find()['title_embeddings'])
         if same_channel:
             similarity = 0.5 * common_tags + 0.25 * common_description + 0.25 * common_title
         else:
@@ -232,10 +238,10 @@ class Video:
         
 
 def commonDescription(x, y):
-    return cosine_similarity(x, y)
+    return int(cosine_similarity(x, y))
 
 def commonTitle(x, y):
-    return cosine_similarity(x, y)
+    return int(cosine_similarity(x, y))
 
 def cosine_similarity(vector_a, vector_b):
     dot_product = np.dot(vector_a, vector_b)
@@ -243,3 +249,35 @@ def cosine_similarity(vector_a, vector_b):
     magnitude_b = np.linalg.norm(vector_b)
     similarity = dot_product / (magnitude_a * magnitude_b)
     return similarity
+
+
+def get_related_videos(video_id):
+    query = '''
+    MATCH (video:Video)-[r:Related]-(related:Video)
+    WHERE video.videoId = "{}"
+    RETURN related.videoId as video_id, related.title as title, related.description as description, related.channelId as channel_id, related.channelTitle as channel_title, related.tags as tags, r.weight as weight
+    ORDER BY r.weight DESC
+    LIMIT 10
+    '''
+    return graph.run(query.format(video_id)).data()
+
+user_name = "test_user"
+user = User(user_name)
+regoste=user.register()
+if regoste:
+    print("user registered")
+channel_name = "test_channel"
+channel = Channel(channel_name)
+channel.insert_channel(channel_name)
+video_id = "test_video"
+video = Video(video_id)
+video.insert_video(video_id,"test_title","test_description",channel_name,"test_channel_title","test_tags",[1,2,3,4],[1,2,3,4])
+print(video.find()['desc_embeddings'])
+channel.add_video(video.find())
+video2_id = "test_video2"
+video2 = Video(video2_id)
+video2.insert_video(video2_id,"test_title2","test_description2",channel_name,"test_channel_title2","test_tags2",[1,2,3,4],[1,2,3,4])
+channel.add_video(video2.find())
+video.add_related_video(video2)
+video2.add_related_video(video)
+print(get_related_videos(video_id))
