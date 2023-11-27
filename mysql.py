@@ -2,7 +2,7 @@ import pymysql
 from datetime import datetime
 #from neo import User
 
-connection = pymysql.connect(host='localhost',user='de_team',password='deteam1234',db='VIDEOS',charset='utf8mb4',cursorclass=pymysql.cursors.DictCursor);
+connection = pymysql.connect(host='localhost',user='DE_Team',password='qwerty123456',db='VIDEOS',charset='utf8mb4',cursorclass=pymysql.cursors.DictCursor);
 
 def verify_user(username,password):
 	c = connection.cursor()
@@ -36,8 +36,7 @@ def create_user(username,password):
 
 
 def clicked(user_id, video_id, search_query, video_rank):
-    db = pymysql.connect("localhost", "root", "pass", "VIDEOS")
-    cursor = db.cursor()
+    cursor = connection.cursor()
     
     # Create the 'clicks' table if it doesn't exist
     cursor.execute("CREATE TABLE IF NOT EXISTS clicks (user_id VARCHAR(255), video_id VARCHAR(255), search_query VARCHAR(255), video_rank INT, click_timestamp DATETIME, clicks INT);")
@@ -55,8 +54,8 @@ def clicked(user_id, video_id, search_query, video_rank):
         query = "UPDATE clicks SET clicks = clicks + 1 WHERE user_id = '{}' AND video_id = '{}' AND search_query = '{}';".format(user_id, video_id, search_query)
         cursor.execute(query)
 
-    db.commit()
-    db.close()
+    connection.commit()
+    connection.close()
 
 def refresh_trending_videos():
     # For simplicity, let's assume trending videos are the ones with the highest click counts for now
