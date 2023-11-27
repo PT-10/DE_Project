@@ -23,7 +23,7 @@ def search_videos(query):
         {"$text": {"$search": query}},
         {"score": {"$meta": "textScore"}}
     ).sort([("score", {"$meta": "textScore"})]).limit(7)
-    print(list(result))
+    # print(list(result))
 
     return list(result)
 
@@ -45,14 +45,14 @@ def rank(embeddings, query: str, k: int, hf_token: str) -> list[str]:
     # Separate the embeddings and video IDs
     video_ids, embeddings = zip(*[(video['_id'], video['title_embedding_hf']) for video in embeddings])
 
-    print(embeddings[0])
-    print(np.array(embeddings[0]).shape)
+    # print(embeddings[0])
+    # print(np.array(embeddings[0]).shape)
 
     embeddings = [np.array(i).reshape(1, -1) for i in embeddings]
 
     query_embedding = generate_embedding(query, hf_token)
     embeddings = np.concatenate(embeddings, axis=0)
-    print(embeddings.shape)
+    # print(embeddings.shape)
     dots = np.dot(query_embedding, embeddings.T)
     emb_norm = np.linalg.norm(embeddings, axis=1).reshape(1, -1)
     query_norm = np.linalg.norm(query_embedding)
@@ -83,7 +83,9 @@ def login():
         else:
             session['username'] = username
             # insert_to_neo()
+            # print("inserted to neo")
             # add_video_relations()
+            # print("added video relations")
             return render_template('index.html')
     else:
         return render_template('login.html', result = [])
@@ -108,13 +110,12 @@ def search():
 
         # Call your MongoDB search function
         embeddings=list(db.test.find({}, {"title_embedding_hf": 1,"_id":1}))
-        # print(embeddings) 
-        results = rank(embeddings,search_query, 7, hf_token)
+        # # print(embeddings) 
+        results = rank(embeddings, search_query, 7, hf_token)
         # results = search_videos(search_query)
-
-
+        # print(results)
         # Pass the results to the template
-        return render_template('search_results.html', search_results=results)
+        return render_template('index.html', search_results=results)
 
 
 @app.route('/video/<video_id>')
@@ -125,7 +126,7 @@ def video_page(video_id):
     video_details = get_video_details(video_id)
 
     # Render the video page template with the video details
-    return render_template('video_details.html', video_details=video_details)
+    return render_template('index.html', video_details=video_details)
 
 def get_video_details(video_id):
     video_details = db.test.find_one({ "videoInfo.id": video_id })

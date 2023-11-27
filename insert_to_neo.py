@@ -4,6 +4,7 @@ from neo import Video, User, Channel
 def insert_to_neo():
     mongo = MongoDB()
     videos = mongo.db.test.find()
+    print(f'Found {len(videos)} videos')
     for video in videos:
         video_info=video['videoInfo']
         video_id = video_info['id']
