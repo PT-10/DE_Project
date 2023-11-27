@@ -1,5 +1,39 @@
 import pymysql
 from datetime import datetime
+#from neo import User
+
+connection = pymysql.connect(host='localhost',user='de_team',password='deteam1234',db='VIDEOS',charset='utf8mb4',cursorclass=pymysql.cursors.DictCursor);
+
+def verify_user(username,password):
+	c = connection.cursor()
+	sql = "SELECT `username`, `password` FROM `users` WHERE `username`=%s"
+	c.execute(sql, (username,))
+	L = list(c);
+	if len(L) > 0:
+		if L[0]['password'] == password:
+			return 1
+		else:
+			return 0
+	else:
+		return 2
+
+def create_user(username,password):
+	c = connection.cursor()
+	valid = verify_user(username,password)
+	if valid == 0:
+		return 0
+	if valid == 2:
+		# user= User(username)
+		# user.register()
+		sql = "INSERT INTO `users` (`username`, `password`) VALUES (%s,%s)"
+		c.execute(sql, (username,password))
+		connection.commit()
+		return 10
+	# else:
+	# 	if 'username' in session:
+	# 		session.pop('username',None)	
+	# 	return 5
+
 
 def clicked(user_id, video_id, search_query, video_rank):
     db = pymysql.connect("localhost", "root", "pass", "VIDEOS")

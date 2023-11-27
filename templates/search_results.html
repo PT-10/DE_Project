@@ -1,43 +1,38 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Search Results</title>
-    <link
-      rel="stylesheet"
-      type="text/css"
-      href="{{ url_for('static', filename='styles-search_result.css') }}"
-    />
-  </head>
-  <body>
-    <div id="search_query_panel">
-      <div id="search_bar">
-          <input
-            type="text"
-            name="search_query"
-            placeholder="Enter your search query"
-          />
-          <button type="submit">Search</button>
-        </form>
-      </div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Search Results</title>
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles-search_result.css') }}" />
+</head>
+<body>
+  <div id="search_query_panel">
+    <div id="search_bar">
+      <input
+        type="text"
+        name="search_query"
+        placeholder="Enter your search query"
+      />
+      <button type="submit">Search</button>
     </div>
+  </div>
 
-    <div id="current_video_panel">
-      <h2>Video Panel</h2>
-      <!-- Display current video details here -->
-    </div>
-    <div id="search_result_panel">
-      <h2>Search Result Panel</h2>
-      <!-- Display search results here -->
-      <div class="result-box">
-        <!-- Content for the first box -->
-        <p>Content for Box 1</p>
-      </div>
-      <div class="result-box">
-        <!-- Content for the second box -->
-        <p>Content for Box 2</p>
-      </div>
-    </div>
-  </body>
+  <div id="current_video_panel">
+    <h2>Video Panel</h2>
+    <!-- Display current video details here -->
+  </div>
+  <div id="search_result_panel">
+    <h2>Search Result Panel</h2>
+    <!-- Display search results here -->
+    {% for result in search_results %}
+    <button>
+      <a href="{{ url_for('video_details', video_id=result.videoInfo.id) }}" class="result-box">
+        <p>{{ result.videoInfo.snippet.title }}</p>
+        <!-- Add more details as needed -->
+      </a>
+    </button>
+    {% endfor %}
+  </div>
+</body>
 </html>

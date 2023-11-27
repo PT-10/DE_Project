@@ -1,15 +1,35 @@
 from flask import Flask, render_template
 from mongodb import MongoDB, generate_embedding
-from setup import DatabaseSetup
+#from setup import DatabaseSetup
 import numpy as np
-from flask import jsonify, request
+from flask import jsonify, request,redirect,session
+from mysql import verify_user,create_user
 
 hf_token = "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"
 embedding_url = "https://api-inference.huggingface.co/pipeline/feature-extraction/sentence-transformers/all-MiniLM-L6-v2"
 
-app = Flask(__name__)
 
+
+app = Flask(__name__)
+app.secret_key = 'any random string'
 mongo = MongoDB()
+db = mongo.db
+def search_videos(query):
+    # Create a text index on the fields you want to search
+    db.test.create_index([("videoInfo.snippet.title", "text"), ("videoInfo.snippet.tags", "text")])
+
+    # Use the $text operator for text search
+    result = db.test.find(
+        {"$text": {"$search": query}},
+        {"score": {"$meta": "textScore"}}
+    ).sort([("score", {"$meta": "textScore"})]).limit(7)
+
+    return list(result)
+
+def extract_titles(results):
+    # Extract titles from the search results
+    titles = [result["videoInfo"]["snippet"]["title"] for result in results]
+    return titles
 # mongo.insert_to_db()
 # counter=0
 # counter_done=0
@@ -51,27 +71,51 @@ mongo = MongoDB()
 #     return top_k_idx.tolist()
 
 
-
 @app.route('/')
-def index():
-    return render_template("index.html")
+def default():
+    return render_template("login.html")
 
-@app.route("/search", methods=["GET"])
+@app.route('/login', methods = ['POST', 'GET'])
+def login():
+    user = ""
+    trending = []
+    subscriptions = []
+    recommended = []
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        valid = verify_user(username,password)
+        if valid != 1:
+             return redirect("/")
+        else:
+            session['username'] = username
+            return render_template('index.html')
+    else:
+        return render_template('login.html', result = [])
+
+@app.route('/register', methods = ['POST', 'GET'])
+def register():
+	# print "in register"
+	if request.method == 'POST':
+		username = request.form['username']
+		password = request.form['password']
+		valid = create_user(username,password)
+		if valid == 0 or valid == 5:
+			return render_template('/index1.html',result = [False, "", recent(),[],[],True])
+		if valid == 10:
+			session['username'] = username
+		return redirect("/")
+
+@app.route('/search', methods=['POST'])
 def search():
-    query = request.args.get('query')
-      # Replace with your actual Hugging Face token
+    if request.method == 'POST':
+        search_query = request.form['search_query']
 
-    if not query:
-        return jsonify({"error": "Query parameter 'query' is required"}), 400
+        # Call your MongoDB search function
+        results = search_videos(search_query)
 
-    embeddings = mongo.embed_all_data(hf_token)
-    result_indices = mongo.rank(embeddings, query, k=5, hf_token=hf_token)
-
-    # Retrieve the details of the top 5 videos based on the search
-    top_videos = [mongo.db.test.find_one({'_id': embeddings_index}) for embeddings_index in result_indices]
-
-    # Return the results as JSON
-    print(jsonify({"results": top_videos}))
+        # Pass the results to the template
+        return render_template('search_results.html', search_results=results)
 
 
 @app.route("/video/<video_id>")
@@ -82,3 +126,50 @@ def video_details(video_id):
 
 if __name__=="__main__":
     app.run(debug=True)
+
+
+# from flask import Flask, render_template, redirect, url_for, request
+# from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
+
+# app = Flask(__name__)
+# app.config['SECRET_KEY'] = 'your_secret_key'
+
+# login_manager = LoginManager(app)
+
+# class User(UserMixin):
+#     def __init__(self, user_id):
+#         self.id = user_id
+
+# @login_manager.user_loader
+# def load_user(user_id):
+#     return User(user_id)
+
+# @app.route('/login', methods=['GET', 'POST'])
+# def login():
+#     if request.method == 'POST':
+#         # Replace this with your actual authentication logic
+#         username = request.form['username']
+#         password = request.form['password']
+
+#         # Example authentication (replace with your own logic)
+#         if username == 'your_username' and password == 'your_password':
+#             user = User(user_id=1)
+#             login_user(user)
+#             return redirect(url_for('index'))
+
+#         # Redirect to login page with an error message on failed login
+#         return render_template('login.html', error='Invalid username or password')
+
+#     return render_template('login.html')
+
+# @app.route('/logout')
+# def logout():
+#     logout_user()
+#     return 'Logged out successfully'
+
+# @app.route('/index')
+# def index():
+#     return render_template('index.html')
+
+# if __name__ == '__main__':
+#     app.run(debug=True)
