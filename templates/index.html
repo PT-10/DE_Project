@@ -25,12 +25,40 @@
     </div>
 
     <div id="current_video_panel">
-      <h2>Video Panel</h2>
-      <!-- Display current video details here -->
+      <h2>Video Details</h2>
+      {% if video_details %}
+        <div>
+          <iframe
+            width="560"
+            height="315"
+            src="https://www.youtube.com/embed/{{ video_details.videoInfo.id }}"
+            frameborder="0"
+            allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen
+          ></iframe>
+          <!-- Add more details as needed -->
+        </div>
+        <h3>{{ video_details.videoInfo.snippet.title }}</h3>
+        <p>{{ video_details.videoInfo.snippet.description }}</p>
+        <p>Views: {{ video_details.videoInfo.statistics.viewCount }}</p>
+        
+      {% else %}
+        <p>No video details found for the specified video ID.</p>
+      {% endif %}
     </div>
-    <div id="search_result_panel">
+    <div id="search_result_panel" style="overflow-y: auto; max-height: 100vh;">
       <h2>Search Result Panel</h2>
       <!-- Display search results here -->
+      {% for result in search_results %}
+      <div class="video-block">
+        <a href="/video/{{ result.videoInfo.id }}" class="video-link">
+          <img src="{{ result.videoInfo.snippet.thumbnails.default.url }}" alt="Video Thumbnail" class="video-thumbnail">
+          <div class="video-details">
+            <p>{{ result.videoInfo.snippet.title }}</p>
+          </div>
+        </a>
+      </div>
+    {% endfor %}
     </div>
   </body>
 </html>

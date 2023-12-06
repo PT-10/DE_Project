@@ -2,7 +2,7 @@ import pymysql
 from datetime import datetime
 # from neo import User
 
-connection = pymysql.connect(host='localhost',user='DE_Team',password='qwerty123456',db='VIDEOS',charset='utf8mb4',cursorclass=pymysql.cursors.DictCursor);
+connection = pymysql.connect(host='localhost',user='de_team',password='deteam1234',db='VIDEOS',charset='utf8mb4',cursorclass=pymysql.cursors.DictCursor);
 
 def verify_user(username,password):
 	c = connection.cursor()

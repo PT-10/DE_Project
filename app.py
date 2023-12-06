@@ -52,23 +52,61 @@ def register():
 		return redirect("/")
 
 
-def search_videos(query):
-    # Create a text index on the fields you want to search
-    db.test.create_index([("videoInfo.snippet.title", "text"), ("videoInfo.snippet.tags", "text")])
+@app.route('/')
+def default():
+    return render_template("login.html")
 
-    # Use the $text operator for text search
-    result = db.test.find(
-        {"$text": {"$search": query}},
-        {"score": {"$meta": "textScore"}}
-    ).sort([("score", {"$meta": "textScore"})]).limit(7)
-    print(list(result))
+@app.route('/login', methods = ['POST', 'GET'])
+def login():
+    user = ""
+    trending = []
+    subscriptions = []
+    recommended = []
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        valid = verify_user(username,password)
+        if valid != 1:
+             return redirect("/")
+        else:
+            session['username'] = username
+            # insert_to_neo()
+            # add_video_relations()
+            return render_template('index.html')
+    else:
+        return render_template('login.html', result = [])
 
-    return list(result)
+@app.route('/register', methods = ['POST', 'GET'])
+def register():
+	# print "in register"
+	if request.method == 'POST':
+		username = request.form['username']
+		password = request.form['password']
+		valid = create_user(username,password)
+		if valid == 0 or valid == 5:
+			return render_template('/index1.html')
+		if valid == 10:
+			session['username'] = username
+		return redirect("/")
 
-def extract_titles(results):
-    # Extract titles from the search results
-    titles = [result["videoInfo"]["snippet"]["title"] for result in results]
-    return titles
+
+# def search_videos(query):
+#     # Create a text index on the fields you want to search
+#     db.test.create_index([("videoInfo.snippet.title", "text"), ("videoInfo.snippet.tags", "text")])
+
+#     # Use the $text operator for text search
+#     result = db.test.find(
+#         {"$text": {"$search": query}},
+#         {"score": {"$meta": "textScore"}}
+#     ).sort([("score", {"$meta": "textScore"})]).limit(7)
+#     # print(list(result))
+
+#     return list(result)
+
+# def extract_titles(results):
+#     # Extract titles from the search results
+#     titles = [result["videoInfo"]["snippet"]["title"] for result in results]
+#     return titles
  
 def get_top_k(scores: np.ndarray, k: int) -> np.ndarray:
     idx = np.argpartition(scores, -k)[-k:]
@@ -83,14 +121,14 @@ def rank(embeddings, query: str, k: int, hf_token: str) -> list[str]:
     # Separate the embeddings and video IDs
     video_ids, embeddings = zip(*[(video['_id'], video['title_embedding_hf']) for video in embeddings])
 
-    print(embeddings[0])
-    print(np.array(embeddings[0]).shape)
+    # print(embeddings[0])
+    # print(np.array(embeddings[0]).shape)
 
     embeddings = [np.array(i).reshape(1, -1) for i in embeddings]
 
     query_embedding = generate_embedding(query, hf_token)
     embeddings = np.concatenate(embeddings, axis=0)
-    print(embeddings.shape)
+    # print(embeddings.shape)
     dots = np.dot(query_embedding, embeddings.T)
     emb_norm = np.linalg.norm(embeddings, axis=1).reshape(1, -1)
     query_norm = np.linalg.norm(query_embedding)
@@ -101,11 +139,70 @@ def rank(embeddings, query: str, k: int, hf_token: str) -> list[str]:
     # Return the top k video IDs instead of the indices
     return list(db.test.find(query))
 
-search_query = "jawan"
-embeddings=list(db.test.find({}, {"title_embedding_hf": 1,"_id":1}))
-        # print(embeddings) 
-results = rank(embeddings,search_query, 7, hf_token)
-print(results)
+def rank_with_(embeddings, query: str, k: int, hf_token: str) -> list[str]:
+    if k > len(embeddings):
+        raise ValueError("k must be less than the number of videos")
+    video_ids = [curr_dict["_id"] for curr_dict in embeddings]
+
+    # Separate the embeddings and video IDs
+    video_ids, embeddings = zip(*[(video['_id'], video['title_embedding_hf']) for video in embeddings])
+
+    # print(embeddings[0])
+    # print(np.array(embeddings[0]).shape)
+
+    embeddings = [np.array(i).reshape(1, -1) for i in embeddings]
+
+    query_embedding = generate_embedding(query, hf_token)
+    embeddings = np.concatenate(embeddings, axis=0)
+    # print(embeddings.shape)
+    dots = np.dot(query_embedding, embeddings.T)
+    emb_norm = np.linalg.norm(embeddings, axis=1).reshape(1, -1)
+    query_norm = np.linalg.norm(query_embedding)
+    scores = np.divide(dots, (emb_norm * query_norm)).reshape(-1)
+    top_k_idx = get_top_k(scores, k)
+    list_ix=[video_ids[i] for i in top_k_idx]
+    query = {"_id": {"$in": list_ix}}
+    # Return the top k video IDs instead of the indices
+    return list(db.test.find(query))
+
+@app.route('/')
+def default():
+    return render_template("login.html")
+
+@app.route('/login', methods = ['POST', 'GET'])
+def login():
+    user = ""
+    trending = []
+    subscriptions = []
+    recommended = []
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        valid = verify_user(username,password)
+        if valid != 1:
+             return redirect("/")
+        else:
+            session['username'] = username
+            # insert_to_neo()
+            # print("inserted to neo")
+            # add_video_relations()
+            # print("added video relations")
+            return render_template('index.html')
+    else:
+        return render_template('login.html', result = [])
+
+@app.route('/register', methods = ['POST', 'GET'])
+def register():
+	# print "in register"
+	if request.method == 'POST':
+		username = request.form['username']
+		password = request.form['password']
+		valid = create_user(username,password)
+		if valid == 0 or valid == 5:
+			return render_template('/index1.html')
+		if valid == 10:
+			session['username'] = username
+		return redirect("/")
 
 @app.route('/search', methods=['POST'])
 def search():
@@ -114,13 +211,12 @@ def search():
 
         # Call your MongoDB search function
         embeddings=list(db.test.find({}, {"title_embedding_hf": 1,"_id":1}))
-        # print(embeddings) 
-        results = rank(embeddings,search_query, 7, hf_token)
+        # # print(embeddings) 
+        results = rank(embeddings, search_query, 7, hf_token)
         # results = search_videos(search_query)
-
-
+        # print(results)
         # Pass the results to the template
-        return render_template('search_results.html', search_results=results)
+        return render_template('index.html', search_results=results)
 
 
 @app.route('/video/<video_id>')
@@ -129,13 +225,27 @@ def video_page(video_id):
     # This is where you would retrieve information about the selected video
     # For example, you might fetch details from a database or an API
     video_details = get_video_details(video_id)
+    video_title = video_details["videoInfo"]["snippet"]["title"]
+    print(video_details)
+    embeddings=list(db.test.find({}, {"title_embedding_hf": 1,"_id":1}))
+    similar_list = rank_with_(embeddings, video_title, 8, hf_token)
 
     # Render the video page template with the video details
-    return render_template('video_details.html', video_details=video_details)
+    return render_template('index.html', video_details=video_details, search_results=similar_list[1:])
 
 def get_video_details(video_id):
     video_details = db.test.find_one({ "videoInfo.id": video_id })
+
+    if video_details:
+        # Increment the view count
+        db.test.update_one(
+            {"videoInfo.id": video_id},
+            {"$inc": {"videoInfo.statistics.viewCount": 1}}
+        )
+
     return video_details
+
+
 
 if __name__=="__main__":
     app.run(debug=True)

@@ -151,7 +151,7 @@ class Video:
     def __init__(self, id_):
         self.id = id_
     
-    def insert_video(self,mongoid,title,description,channelId,channelTitle,tags,title_embeddings,desc_embeddings):
+    def insert_video(self,mongoid,title,description,channelId,channelTitle,tags,title_embeddings,desc_embeddings=None):
         if self.find():
             return False
         video = Node('Video', videoId=self.id, mongoId=mongoid, title=title, description=description, channelId=channelId, channelTitle=channelTitle,tags=tags,title_embeddings=title_embeddings,desc_embeddings=desc_embeddings)
@@ -169,7 +169,8 @@ class Video:
         WHERE video.videoId = "{}"
         RETURN DISTINCT channel.channelId
         '''
-        print(graph.run(query.format(self.id)).data())
+        if len(graph.run(query.format(self.id)).data()) == 0:
+            return None
         return graph.run(query.format(self.id)).data()[0]['channel.channelId']
 
     def liked_by(self):
@@ -221,18 +222,23 @@ class Video:
         graph.run(query.format(user['username'],self.find()['videoId']))
 
     def add_related_video(self, video):
+        if video.find() == None:
+            return
         current_channel = self.get_channel()
         related_channel = video.get_channel()
+        same_channel = False
         if current_channel == related_channel:
             print('same  channel')
             same_channel = True
-        common_tags = len(set(self.find()['tags']).intersection(set(video.find()['tags'])))
-        common_description = commonDescription(self.find()['desc_embeddings'], video.find()['desc_embeddings'])
+        common_tags=0
+        if 'tags' in self.find() and 'tags' in video.find():
+            common_tags = len(set(self.find()['tags']).intersection(set(video.find()['tags'])))
+        # common_description = commonDescription(self.find()['desc_embeddings'], video.find()['desc_embeddings'])
         common_title = commonTitle(self.find()['title_embeddings'], video.find()['title_embeddings'])
         if same_channel:
-            similarity = 0.5 * common_tags + 0.25 * common_description + 0.25 * common_title
+            similarity = 0.5 * common_tags+ 0.25 * common_title
         else:
-            similarity = 0.25 * common_tags + 0.375 * common_description + 0.375 * common_title
+            similarity = 0.375 * common_tags+ 0.25* common_title
         graph.create(Relationship(self.find(), "Related", video.find(),weight=similarity))
         
 
@@ -263,11 +269,19 @@ def get_related_videos(video_id):
 # def get_ordered_related_videos(video_id):
 #     # Get related videos from Neo4j
 #     related_videos = get_related_videos(video_id)
+# def get_ordered_related_videos(video_id):
+#     # Get related videos from Neo4j
+#     related_videos = get_related_videos(video_id)
 
 #     # Get clicks for each video from MySQL and add as a new field
 #     for video in related_videos:
 #         video['clicks'] = get_clicks_mysql(video['video_id'])
+#     # Get clicks for each video from MySQL and add as a new field
+#     for video in related_videos:
+#         video['clicks'] = get_clicks_mysql(video['video_id'])
 
+#     # Order videos by clicks
+#     ordered_videos = sorted(related_videos, key=lambda x: x['clicks'], reverse=True)
 #     # Order videos by clicks
 #     ordered_videos = sorted(related_videos, key=lambda x: x['clicks'], reverse=True)
 
