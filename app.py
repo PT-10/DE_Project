@@ -14,6 +14,44 @@ app.secret_key = 'any random string'
 mongo = MongoDB()
 db = mongo.db
 
+@app.route('/')
+def default():
+    return render_template("login.html")
+
+@app.route('/login', methods = ['POST', 'GET'])
+def login():
+    user = ""
+    trending = []
+    subscriptions = []
+    recommended = []
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        valid = verify_user(username,password)
+        if valid != 1:
+             return redirect("/")
+        else:
+            session['username'] = username
+            # insert_to_neo()
+            # add_video_relations()
+            return render_template('index.html')
+    else:
+        return render_template('login.html', result = [])
+
+@app.route('/register', methods = ['POST', 'GET'])
+def register():
+	# print "in register"
+	if request.method == 'POST':
+		username = request.form['username']
+		password = request.form['password']
+		valid = create_user(username,password)
+		if valid == 0 or valid == 5:
+			return render_template('/index1.html')
+		if valid == 10:
+			session['username'] = username
+		return redirect("/")
+
+
 def search_videos(query):
     # Create a text index on the fields you want to search
     db.test.create_index([("videoInfo.snippet.title", "text"), ("videoInfo.snippet.tags", "text")])
@@ -63,43 +101,11 @@ def rank(embeddings, query: str, k: int, hf_token: str) -> list[str]:
     # Return the top k video IDs instead of the indices
     return list(db.test.find(query))
 
-
-@app.route('/')
-def default():
-    return render_template("login.html")
-
-@app.route('/login', methods = ['POST', 'GET'])
-def login():
-    user = ""
-    trending = []
-    subscriptions = []
-    recommended = []
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        valid = verify_user(username,password)
-        if valid != 1:
-             return redirect("/")
-        else:
-            session['username'] = username
-            # insert_to_neo()
-            # add_video_relations()
-            return render_template('index.html')
-    else:
-        return render_template('login.html', result = [])
-
-@app.route('/register', methods = ['POST', 'GET'])
-def register():
-	# print "in register"
-	if request.method == 'POST':
-		username = request.form['username']
-		password = request.form['password']
-		valid = create_user(username,password)
-		if valid == 0 or valid == 5:
-			return render_template('/index1.html')
-		if valid == 10:
-			session['username'] = username
-		return redirect("/")
+search_query = "jawan"
+embeddings=list(db.test.find({}, {"title_embedding_hf": 1,"_id":1}))
+        # print(embeddings) 
+results = rank(embeddings,search_query, 7, hf_token)
+print(results)
 
 @app.route('/search', methods=['POST'])
 def search():
