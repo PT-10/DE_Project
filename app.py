@@ -5,7 +5,7 @@ from flask import request,redirect,session
 from mysql import verify_user,create_user, clicked
 from neo import User, get_ordered_related_videos
 
-hf_token = "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"
+hf_token = "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"
 embedding_url = "https://api-inference.huggingface.co/pipeline/feature-extraction/sentence-transformers/all-MiniLM-L6-v2"
 
 app = Flask(__name__)
