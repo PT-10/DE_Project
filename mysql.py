@@ -23,16 +23,11 @@ def create_user(username,password):
 	if valid == 0:
 		return 0
 	if valid == 2:
-		# user= User(username)
-		# user.register()
 		sql = "INSERT INTO `users` (`username`, `password`) VALUES (%s,%s)"
 		c.execute(sql, (username,password))
 		connection.commit()
 		return 10
-	# else:
-	# 	if 'username' in session:
-	# 		session.pop('username',None)	
-	# 	return 5
+
 
 
 def clicked(user_id, video_id, search_query, video_rank):

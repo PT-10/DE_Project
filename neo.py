@@ -3,10 +3,6 @@ from py2neo import Graph, Node, Relationship
 import numpy as np
 from mysql import get_clicks
 
-# url = os.environ.get('GRAPHENEDB_URL', 'http://localhost:7474')
-# username = os.environ.get('NEO4J_USERNAME')
-# password = os.environ.get('NEO4J_PASSWORD')
-# graph = Graph(url + '/db/data/', username=username, password=password)
 graph = Graph("bolt://localhost:7687", auth=(config.neo4j_user, config.neo4j_pass))
 
 
@@ -267,9 +263,7 @@ def get_related_videos(video_id):
     '''
     return graph.run(query.format(video_id)).data()
 
-# def get_ordered_related_videos(video_id):
-#     # Get related videos from Neo4j
-#     related_videos = get_related_videos(video_id)
+
 def get_ordered_related_videos(user_id,video_id):
     # Get related videos from Neo4j
     related_videos = get_related_videos(video_id)

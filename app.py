@@ -31,7 +31,7 @@ def rank(embeddings, query: str, k: int, hf_token: str) -> list[str]:
 
     query_embedding = generate_embedding(query, hf_token)
     embeddings = np.concatenate(embeddings, axis=0)
-    # print(embeddings.shape)
+
     dots = np.dot(query_embedding, embeddings.T)
     emb_norm = np.linalg.norm(embeddings, axis=1).reshape(1, -1)
     query_norm = np.linalg.norm(query_embedding)
@@ -49,10 +49,6 @@ def rank_with_(embeddings, query: str, k: int, hf_token: str) -> list[str]:
 
     # Separate the embeddings and video IDs
     video_ids, embeddings = zip(*[(video['_id'], video['title_embedding_hf']) for video in embeddings])
-
-    # print(embeddings[0])
-    # print(np.array(embeddings[0]).shape)
-
     embeddings = [np.array(i).reshape(1, -1) for i in embeddings]
 
     query_embedding = generate_embedding(query, hf_token)
@@ -111,12 +107,8 @@ def search():
 
         # Call your MongoDB search function
         embeddings=list(db.test.find({}, {"title_embedding_hf": 1,"_id":1}))
-        # # print(embeddings) 
         results = rank(embeddings, search_query, 7, hf_token)
         results=list(zip(results,range(1,len(results)+1)))
-        # results = search_videos(search_query)
-        # print(results)
-        # Pass the results to the template
         return render_template('index.html', search_results=results, search_query=search_query)
 
 
