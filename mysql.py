@@ -2,7 +2,7 @@ import pymysql
 from datetime import datetime
 # from neo import User
 
-connection = pymysql.connect(host='localhost',user='de_team',password='deteam1234',db='VIDEOS',charset='utf8mb4',cursorclass=pymysql.cursors.DictCursor);
+connection = pymysql.connect(host='localhost',user='root',password='root@1234',db='VIDEOS',charset='utf8mb4',cursorclass=pymysql.cursors.DictCursor);
 
 def verify_user(username,password):
 	c = connection.cursor()
@@ -36,7 +36,12 @@ def create_user(username,password):
 
 
 def clicked(user_id, video_id, search_query, video_rank):
-    cursor = connection.cursor()
+    if connection.open:
+        cursor = connection.cursor()
+    else:
+        # Reopen the connection if it's closed
+        connection.connect()
+        cursor = connection.cursor()
     
     # Create the 'clicks' table if it doesn't exist
     cursor.execute("CREATE TABLE IF NOT EXISTS clicks (user_id VARCHAR(255), video_id VARCHAR(255), search_query VARCHAR(255), video_rank INT, click_timestamp DATETIME, clicks INT);")
@@ -48,6 +53,7 @@ def clicked(user_id, video_id, search_query, video_rank):
     if len(results) == 0:
         # If no clicks exist, insert a new record
         query = "INSERT INTO clicks(user_id, video_id, search_query, video_rank, click_timestamp, clicks) VALUES ('{}', '{}', '{}', {}, '{}', {});".format(user_id, video_id, search_query, video_rank, datetime.now(), 1)
+        print(user_id, video_id, search_query, video_rank, datetime.now(), 1)
         cursor.execute(query)
     else:
         # If clicks exist, update the clicks count
@@ -76,3 +82,24 @@ def get_trending_videos():
     trending_videos = refresh_trending_videos()
 
     return trending_videos
+
+def get_clicks(user_id, video_id):
+    if connection.open:
+        cursor = connection.cursor()
+    else:
+        # Reopen the connection if it's closed
+        connection.connect()
+        cursor = connection.cursor()
+    cursor.execute("SELECT  SUM(clicks) FROM clicks WHERE user_id = '{}' AND video_id = '{}';".format(user_id, video_id))
+    print(video_id)
+    print("SELECT  SUM(clicks) FROM clicks WHERE user_id = '{}' AND video_id = '{}';".format(user_id, video_id))
+    results = cursor.fetchall()
+    print(results)
+    if len(results) == 0:
+        clicks = 0
+    else:
+        clicks = results[0]['SUM(clicks)'] if results[0]['SUM(clicks)'] is not None else 0
+
+    connection.close()
+
+    return clicks
