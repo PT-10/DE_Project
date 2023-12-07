@@ -26,18 +26,29 @@ def insert_to_neo():
 def add_video_relations():
     mongo = MongoDB()
     videos = mongo.db.test.find()
+    videos=list(videos)
+    counter=0
     for video in videos:
-        for video2 in videos:
-            if video != video2:
-                video1_id = video['videoInfo']['id']
-                video2_id = video2['videoInfo']['id']
-                video1 = Video(video1_id)
-                video2 = Video(video2_id)
-                video1.add_related_video(video2)
-                print(f'related video {video1_id} and {video2_id} into Neo4j')
+        if counter>73:
+            if video['videoInfo']['id'] == '-0ziqk9cZRM' or video['videoInfo']['id'] == '-5kuoKHNxvc':
+                continue
+            if 'tags' not in video['videoInfo']['snippet']:
+                continue
+            for video2 in videos:
+                if video != video2:
+                    if 'tags' not in video2['videoInfo']['snippet']:
+                        continue
+                    video1_id = video['videoInfo']['id']
+                    video2_id = video2['videoInfo']['id']
+                    video1 = Video(video1_id)
+                    video2 = Video(video2_id)
+                    video1.add_related_video(video2)
+                    print(f'related video {video1_id} and {video2_id} into Neo4j')
+        counter+=1
 
 if __name__ == '__main__':
     #insert_to_neo()
     add_video_relations()
+
 
 
