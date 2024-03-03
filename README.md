@@ -1,15 +1,26 @@
 # DE_Project
 
-python -m venv de_env
-
+1. Create a virtual environment:
+   ```
+   python -m venv de_env
+   ```
+2. Activate the virtual environment (PowerShell):
+```
 cd /path/to/new/virtual/environment
-de_env/Scripts/Activate.ps1 (powershell)
+de_env/Scripts/Activate.ps1
+```
+3. Navigate to the root directory of your project and set flask app:
+   ```
+   cd /path/to/root/directory
+   set FLASK_APP=app.py
+   ```
+4. Before running flask app, ensure mongodb is running:
+   ```
+   cd C:\Program Files\MongoDB\Server\7.0\bin
+    mongod --dbpath C:\Users\<user>\projects\DE_Project\data\test
+   ```
+5. Run flask app:
+   ```
+   python -m flask run
 
-cd to root directory
-set FLASK_APP=app.py
-python -m flask run
-
-before starting the flask server
-run mongodb server -> cd C:\Program Files\MongoDB\Server\7.0\bin
-run the command -> mongod
-mongod --dbpath C:\Users\prash\projects\DE_Project\data\test
+   ```
